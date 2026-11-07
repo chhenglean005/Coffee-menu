@@ -18,12 +18,26 @@ const mongoUri = process.env.MONGODB_URI;
 const uploadDirectory = path.join(__dirname, "uploads");
 const frontendOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 const sessionCookieName = "coffee-shop.sid";
+const sessionCookieSameSite = process.env.SESSION_COOKIE_SAME_SITE
+  || (process.env.NODE_ENV === "production" ? "none" : "lax");
+const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: sessionCookieSameSite,
+  secure: process.env.NODE_ENV === "production",
+};
 
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   throw new Error("SESSION_SECRET must contain at least 32 characters. Generate one with crypto.randomBytes(32).toString('hex').");
 }
+if (!["lax", "strict", "none"].includes(sessionCookieSameSite)) {
+  throw new Error("SESSION_COOKIE_SAME_SITE must be 'lax', 'strict', or 'none'.");
+}
+if (sessionCookieSameSite === "none" && process.env.NODE_ENV !== "production") {
+  throw new Error("SESSION_COOKIE_SAME_SITE=none requires NODE_ENV=production and HTTPS.");
+}
 
 if (process.env.TRUST_PROXY === "1") app.set("trust proxy", 1);
+app.locals.sessionCookieOptions = sessionCookieOptions;
 app.use(cors({ origin: frontendOrigin, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(uploadDirectory, { index: false }));
@@ -39,9 +53,7 @@ app.use(
       collectionName: "sessions",
     }),
     cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      ...sessionCookieOptions,
       maxAge: 8 * 60 * 60 * 1000,
     },
   }),

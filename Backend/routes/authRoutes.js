@@ -78,7 +78,7 @@ router.post(
     if (!req.session) return res.status(204).end();
     req.session.destroy((error) => {
       if (error) return next(error);
-      res.clearCookie("coffee-shop.sid", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+      res.clearCookie("coffee-shop.sid", req.app.locals.sessionCookieOptions);
       return res.status(204).end();
     });
   },

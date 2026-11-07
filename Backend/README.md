@@ -1,6 +1,6 @@
 # Coffee Shop API
 
-Express and Mongoose API for managing the coffee shop menu and dashboard accounts. The React app connects to `http://localhost:5000/api`.
+Express and Mongoose API for managing the coffee shop menu and dashboard accounts. The React app connects to `http://localhost:5000/api` in local development; set `VITE_API_URL` for the deployed API.
 
 ## Requirements and setup
 
@@ -38,7 +38,28 @@ Start the API:
 npm run dev
 ```
 
-The server connects to MongoDB before listening on port `5000` (or `PORT` if configured). Use `npm start` for a non-watching process. CORS is restricted to `FRONTEND_ORIGIN`. The API uses an HttpOnly, SameSite session cookie, stored in MongoDB. In production, use HTTPS and set `NODE_ENV=production` so the cookie is secure. If running behind a trusted reverse proxy, set `TRUST_PROXY=1`.
+The server connects to MongoDB before listening on port `5000` (or `PORT` if configured). Use `npm start` for a non-watching process. CORS is restricted to `FRONTEND_ORIGIN`. The API uses an HttpOnly session cookie stored in MongoDB. In production, use HTTPS and set `NODE_ENV=production` so the cookie is secure. If running behind a trusted reverse proxy, set `TRUST_PROXY=1`.
+
+## Deploying the frontend to Netlify
+
+The repository includes a root `netlify.toml` configured to build the Vite app from `Frontend` using `npm run build` and publish `dist`. In Netlify, connect this repository and add this site environment variable:
+
+```text
+VITE_API_URL=https://<your-api-host>/api
+```
+
+Replace the example URL with the public URL of your deployed backend, then deploy or trigger a new deploy. Vite embeds this value at build time.
+
+The Express API must be deployed separately on a Node.js host that supports a persistent service. Configure its environment variables from `Backend/.env.example`, including:
+
+- `MONGODB_URI` with your production MongoDB connection string.
+- `FRONTEND_ORIGIN` with the exact deployed Netlify site origin, such as `https://your-site.netlify.app` (no trailing slash).
+- `SESSION_SECRET` with a unique random value of at least 32 characters.
+- `NODE_ENV=production`.
+- `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD` for first startup only. After the first administrator is created, remove `INITIAL_ADMIN_PASSWORD`.
+- `SESSION_COOKIE_SAME_SITE=none` when the Netlify site and API use different site domains. `none` requires HTTPS. If both use HTTPS subdomains of your own domain, set it to `lax` instead.
+
+Set the Netlify environment variable to the backend's public URL, not `localhost`. After deployment, check `https://<your-api-host>/api/health`, load the menu, and test staff sign-in. Some browsers restrict third-party cookies between unrelated site domains; using a custom domain with the frontend and API on the same site (for example, `www.example.com` and `api.example.com`) is the most reliable way to keep cross-origin sessions working.
 
 ## Endpoints
 

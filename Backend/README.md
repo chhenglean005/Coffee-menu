@@ -61,6 +61,18 @@ The Express API must be deployed separately on a Node.js host that supports a pe
 
 Set the Netlify environment variable to the backend's public URL, not `localhost`. After deployment, check `https://<your-api-host>/api/health`, load the menu, and test staff sign-in. Some browsers restrict third-party cookies between unrelated site domains; using a custom domain with the frontend and API on the same site (for example, `www.example.com` and `api.example.com`) is the most reliable way to keep cross-origin sessions working.
 
+## Deploy both services to Render
+
+The repository root contains a `render.yaml` Blueprint for a Render web service (Express API) and a static site (Vite frontend). To deploy:
+
+1. Push the repository to GitHub and create a new **Blueprint** in Render connected to that repository.
+2. When prompted, provide `MONGODB_URI` with your production MongoDB Atlas connection string, plus `INITIAL_ADMIN_EMAIL` and a unique `INITIAL_ADMIN_PASSWORD` of at least 12 characters.
+3. Review the service environment values. The Blueprint uses `https://coffee-menu-api.onrender.com/api` for the frontend API URL and `https://coffee-menu-frontend.onrender.com` for the backend CORS origin. If Render assigns different service URLs, update `VITE_API_URL` on the static site and `FRONTEND_ORIGIN` on the API to match the actual URLs exactly, then redeploy both services.
+4. Wait for the API health check at `https://<your-api-host>/api/health` to pass, then load the frontend and test staff sign-in.
+5. After the first administrator has been created, remove `INITIAL_ADMIN_PASSWORD` from the API environment.
+
+The Blueprint generates `SESSION_SECRET`, sets `NODE_ENV=production`, enables proxy trust for Render's HTTPS proxy, and configures secure cross-origin session cookies. For menu image uploads, also set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on the API service. Keep MongoDB and Cloudinary credentials in Render's environment settings, never in the frontend or source control. Render's free web service can sleep when idle; the first request after inactivity may take longer.
+
 ## Endpoints
 
 | Method | Path | Description |
